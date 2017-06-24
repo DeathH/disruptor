@@ -25,6 +25,7 @@ import com.lmax.disruptor.util.Util;
 /**
  * <p>Coordinator for claiming sequences for access to a data structure while tracking dependent {@link Sequence}s.
  * Suitable for use for sequencing across multiple publisher threads.</p>
+ * 适用于多线程publiser
  * <p>
  * <p> * <p>Note on {@link Sequencer#getCursor()}:  With this sequencer the cursor value is updated after the call
  * to {@link Sequencer#next()}, to determine the highest available sequence that can be read, then
@@ -119,18 +120,22 @@ public final class MultiProducerSequencer extends AbstractSequencer
         long current;
         long next;
 
+        //生产者不断尝试地去获取下一个可用的Sequence，确保：下一个可用的seq不会覆盖消费者的最小seq，且下一个可用的seq不会超过当前cursor的值。
         do
         {
             current = cursor.get();
             next = current + n;
 
             long wrapPoint = next - bufferSize;
+            
+            //gatingSequenceCache将上次计算出来的gatingSequence记录下来，以备下次循环时判定
             long cachedGatingSequence = gatingSequenceCache.get();
 
             if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
             {
                 long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
 
+                //下一个可用的seq不会覆盖消费者的最小seq,且下一个可用的seq不会超过当前cursor的值。
                 if (wrapPoint > gatingSequence)
                 {
                     waitStrategy.signalAllWhenBlocking();

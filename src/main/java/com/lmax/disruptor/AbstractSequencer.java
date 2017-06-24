@@ -32,7 +32,13 @@ public abstract class AbstractSequencer implements Sequencer
 
     protected final int bufferSize;
     protected final WaitStrategy waitStrategy;
+    /**
+     * 当前RingBuffer对应的油表位置
+     */
     protected final Sequence cursor = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    /**
+     * 各个消费者持有的取数sequence数组
+     */
     protected volatile Sequence[] gatingSequences = new Sequence[0];
 
     /**

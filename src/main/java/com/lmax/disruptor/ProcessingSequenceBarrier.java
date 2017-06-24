@@ -53,6 +53,10 @@ final class ProcessingSequenceBarrier implements SequenceBarrier
     {
         checkAlert();
 
+        //Wait for the given sequence to be available。
+        //这里并不保证返回值availableSequence一定等于 given sequence，他们的大小关系取决于采用的WaitStrategy。
+        //eg. 1、YieldingWaitStrategy在自旋100次尝试后，会直接返回dependentSequence的最小seq，这时并不保证返回值>=given sequence
+        //    2、BlockingWaitStrategy则会阻塞等待given sequence可用为止，可用并不是说availableSequence == given sequence，而应当是指 >=
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
         if (availableSequence < sequence)
@@ -60,6 +64,9 @@ final class ProcessingSequenceBarrier implements SequenceBarrier
             return availableSequence;
         }
 
+        //获取消费者可以消费的最大的可用序号，支持批处理效应，提升处理效率。
+        //当availableSequence > sequence时，需要遍历 sequence --> availableSequence，找到最前一个准备就绪，可以被消费的event对应的seq。
+        //最小值为：sequence-1
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 

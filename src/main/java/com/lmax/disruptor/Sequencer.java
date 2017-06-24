@@ -17,6 +17,7 @@ package com.lmax.disruptor;
 
 /**
  * Coordinates claiming sequences for access to a data structure while tracking dependent {@link Sequence}s
+ * 用于声明访问数据结构的序列（sequences），他的行踪依赖于Sequences
  */
 public interface Sequencer extends Cursored, Sequenced
 {
@@ -45,6 +46,8 @@ public interface Sequencer extends Cursored, Sequenced
      * Add the specified gating sequences to this instance of the Disruptor.  They will
      * safely and atomically added to the list of gating sequences.
      *
+     *gatingSequences是什么东西？
+     *
      * @param gatingSequences The sequences to add.
      */
     void addGatingSequences(Sequence... gatingSequences);
@@ -60,6 +63,10 @@ public interface Sequencer extends Cursored, Sequenced
     /**
      * Create a new SequenceBarrier to be used by an EventProcessor to track which messages
      * are available to be read from the ring buffer given a list of sequences to track.
+     * 
+     * 为EventProcessor常见一个SequenceBarrier（序列栅栏），EventProcessor使用这个SequenceBarrier跟踪并查看RingBuffer中的哪个消息可以被读取了
+     * sequencesToTrack表示需要被指定EventProcessor跟踪的sequences列表。
+     * 【可以理解为processor消费者依赖于其他前置的消费者，使用SequenceBarrier来确保当前proceessor的消费sequence不会超过其依赖的消费者的sequence】
      *
      * @param sequencesToTrack
      * @return A sequence barrier that will track the specified sequences.
@@ -83,6 +90,8 @@ public interface Sequencer extends Cursored, Sequenced
      * there are no available values <code>&gt;= nextSequence</code> the return value will be
      * <code>nextSequence - 1</code>.  To work correctly a consumer should pass a value that
      * is 1 higher than the last sequence that was successfully processed.
+     * 
+     * 返回当前可用sequence的最高值，如果nextSequence>availableSequence，则返回nextSequence
      *
      * @param nextSequence      The sequence to start scanning from.
      * @param availableSequence The sequence to scan to.

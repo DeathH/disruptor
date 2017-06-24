@@ -28,13 +28,19 @@ abstract class RingBufferPad
 
 abstract class RingBufferFields<E> extends RingBufferPad
 {
+	//用于填充的对象引用，为什么填充不知道？
     private static final int BUFFER_PAD;
+    //entry存储位置相对与array起始位置的偏移量，用于UNSAFE内存操作时进行寻址，注意这个偏移量加上了用于填充的BUFFER_PAD大小
     private static final long REF_ARRAY_BASE;
+    //对应对象引用占用内存大小，计算出来的相对位移数，比如对象引用大小是4byte，那么REF_ELEMENT_SHIFT=2，因为2的2次方=4；
     private static final int REF_ELEMENT_SHIFT;
     private static final Unsafe UNSAFE = Util.getUnsafe();
 
     static
     {
+    	//获取数组中一个元素的大小. Object[]数组的元素是对象引用
+    	//Java对象引用的大小取决于你当前的环境，根据不同JVM的设置以及分配给JVM的内存大小，它可能是4个或者8个字节。
+    	//在大于32G的堆中，对像引用的大小总会是8个字节，但是在一个比较小的堆中它就会是4个字节，除非关闭JVM设置：-XX:-UseCompressedOops。
         final int scale = UNSAFE.arrayIndexScale(Object[].class);
         if (4 == scale)
         {
@@ -50,6 +56,7 @@ abstract class RingBufferFields<E> extends RingBufferPad
         }
         BUFFER_PAD = 128 / scale;
         // Including the buffer pad in the array base offset
+        //entry存储位置相对与array起始位置的偏移量，用于UNSAFE内存操作时进行寻址，注意这个偏移量加上了用于填充的BUFFER_PAD大小
         REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + (BUFFER_PAD << REF_ELEMENT_SHIFT);
     }
 
@@ -90,6 +97,9 @@ abstract class RingBufferFields<E> extends RingBufferPad
     @SuppressWarnings("unchecked")
     protected final E elementAt(long sequence)
     {
+    	//从内存中获取sequence对应的entry值
+    	//(sequence & indexMask)相当于：sequence%(indexMask+1)，据此计算出sequence对应的entry
+    	//对模值左移REF_ELEMENT_SHIFT，是为了得到entry对应对象应用的实际大小值，REF_ELEMENT_SHIFT是enties[]数组的元素大小值，单位为byte
         return (E) UNSAFE.getObject(entries, REF_ARRAY_BASE + ((sequence & indexMask) << REF_ELEMENT_SHIFT));
     }
 }

@@ -21,6 +21,10 @@ package com.lmax.disruptor;
  * <p>
  * This strategy will use CPU resource to avoid syscalls which can introduce latency jitter.  It is best
  * used when threads can be bound to specific CPU cores.
+ * 
+ * 忙旋转策略使用一个忙旋转循环在栅栏上等待。
+ * 该策略会占用CPU资源以避免'syscalls'带来的时延抖动。当线程绑定至特定CPU核上时，最好使用该策略。（标注：是不是说当CPU核为线程独占时，最为适用？）
+ * 
  */
 public final class BusySpinWaitStrategy implements WaitStrategy
 {
